@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 
-/// MODEL: categorias disponíveis, cada uma com seu rótulo e ícone.
+/// MODEL: categorias disponíveis, cada uma com rótulo, ícone e cor.
 enum Categoria {
-  eletronicos('Eletrônicos', Icons.devices),
-  roupas('Roupas', Icons.checkroom),
-  alimentos('Alimentos', Icons.restaurant),
-  livros('Livros', Icons.menu_book),
-  esportes('Esportes', Icons.sports_soccer),
-  casa('Casa', Icons.chair);
+  eletronicos('Eletrônicos', Icons.devices, Color(0xFF1E88E5)),
+  roupas('Roupas', Icons.checkroom, Color(0xFFD81B60)),
+  alimentos('Alimentos', Icons.restaurant, Color(0xFFFB8C00)),
+  livros('Livros', Icons.menu_book, Color(0xFF00897B)),
+  esportes('Esportes', Icons.sports_soccer, Color(0xFF43A047)),
+  casa('Casa', Icons.chair, Color(0xFF8E24AA));
 
-  const Categoria(this.rotulo, this.icone);
+  const Categoria(this.rotulo, this.icone, this.cor);
 
   final String rotulo;
   final IconData icone;
+  final Color cor;
 }

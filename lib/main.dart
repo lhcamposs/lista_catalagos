@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'theme/app_theme.dart';
 import 'views/catalogo_view.dart';
 
 void main() {
@@ -14,10 +15,7 @@ class CatalogoApp extends StatelessWidget {
     return MaterialApp(
       title: 'Catálogo de Produtos',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.tema,
       home: const CatalogoView(),
     );
   }
