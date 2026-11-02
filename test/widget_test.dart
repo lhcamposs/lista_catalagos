@@ -1,30 +1,55 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lista_catalagos/main.dart';
+import 'package:lista_catalagos/models/produto.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Exibe o catálogo inicial', (tester) async {
+    await tester.pumpWidget(const CatalogoApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.text('Catálogo de Produtos'), findsOneWidget);
+    expect(find.text('Smartphone'), findsOneWidget);
+    expect(find.text('Comprar'), findsWidgets);
+    expect(find.byType(FloatingActionButton), findsOneWidget);
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+  testWidgets('Tocar no produto mostra SnackBar', (tester) async {
+    await tester.pumpWidget(const CatalogoApp());
+
+    await tester.tap(find.text('Smartphone'));
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Smartphone foi adicionado ao carrinho!'), findsOneWidget);
+  });
+
+  testWidgets('Cadastra novo produto sem remover os existentes', (tester) async {
+    await tester.pumpWidget(const CatalogoApp());
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    expect(find.text('Cadastrar Produto'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextFormField).at(0), 'Notebook');
+    await tester.enterText(find.byType(TextFormField).at(1), '3.499,90');
+
+    await tester.tap(find.byType(DropdownButton<Categoria>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Eletrônicos').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Cadastrar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Catálogo de Produtos'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Notebook'), 200);
+    expect(find.text('Notebook'), findsOneWidget);
+    expect(find.text('Smartphone', skipOffstage: false), findsOneWidget);
+  });
+
+  test('Formata preço no padrão brasileiro', () {
+    const p = Produto(nome: 'X', preco: 1299.9, categoria: Categoria.casa);
+    expect(p.precoFormatado, 'R\$ 1.299,90');
+    expect(p.icone, Icons.chair);
   });
 }
