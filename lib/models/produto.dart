@@ -4,7 +4,6 @@ import 'categoria.dart';
 
 export 'categoria.dart';
 
-/// MODEL: representa os dados de um produto do catálogo.
 class Produto {
   const Produto({
     required this.nome,

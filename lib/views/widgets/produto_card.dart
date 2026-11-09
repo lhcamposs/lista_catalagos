@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../models/produto.dart';
 
-/// VIEW (componente): Card de um produto com ícone, nome, preço e botão Comprar.
 class ProdutoCard extends StatelessWidget {
   const ProdutoCard({
     super.key,
