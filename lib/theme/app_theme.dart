@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Cores e tema visual do aplicativo.
 class AppTheme {
   AppTheme._();
 
@@ -8,7 +7,6 @@ class AppTheme {
   static const Color secundaria = Color(0xFFFF4D8D);
   static const Color fundo = Color(0xFFF4F1FF);
 
-  /// Gradiente usado nas barras de topo e destaques.
   static const LinearGradient gradiente = LinearGradient(
     colors: [primaria, secundaria],
     begin: Alignment.topLeft,

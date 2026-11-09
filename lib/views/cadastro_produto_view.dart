@@ -1,23 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/produto.dart';
 import '../theme/app_theme.dart';
 import '../viewmodels/cadastro_produto_viewmodel.dart';
 
-/// VIEW da tela Cadastrar Produto: monta o formulário e delega
-/// validação e criação do produto ao CadastroProdutoViewModel.
 class CadastroProdutoView extends StatefulWidget {
-  const CadastroProdutoView({super.key});
+  const CadastroProdutoView({super.key, this.nomesExistentes = const []});
+
+  final List<String> nomesExistentes;
 
   @override
   State<CadastroProdutoView> createState() => _CadastroProdutoViewState();
 }
 
 class _CadastroProdutoViewState extends State<CadastroProdutoView> {
-  final _viewModel = CadastroProdutoViewModel();
+  late final CadastroProdutoViewModel _viewModel =
+      CadastroProdutoViewModel(nomesExistentes: widget.nomesExistentes);
   final _formKey = GlobalKey<FormState>();
   final _nomeController = TextEditingController();
   final _precoController = TextEditingController();
+
+  AutovalidateMode _modoValidacao = AutovalidateMode.disabled;
 
   @override
   void dispose() {
@@ -28,10 +32,36 @@ class _CadastroProdutoViewState extends State<CadastroProdutoView> {
   }
 
   void _salvar() {
+    FocusScope.of(context).unfocus();
+
+    final formularioValido = _formKey.currentState!.validate();
+
+    if (!formularioValido) {
+      setState(() => _modoValidacao = AutovalidateMode.onUserInteraction);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            backgroundColor: Color(0xFFC62828),
+            content: Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.white),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Não foi possível cadastrar. Corrija os campos destacados em vermelho.',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      return;
+    }
+
     final produto = _viewModel.criarProduto(
       nome: _nomeController.text,
       preco: _precoController.text,
-      camposValidos: _formKey.currentState!.validate(),
     );
     if (produto != null) {
       // Retorna à tela principal entregando o novo produto.
@@ -50,7 +80,6 @@ class _CadastroProdutoViewState extends State<CadastroProdutoView> {
         ),
       );
 
-  /// Pré-visualização do ícone conforme a categoria escolhida.
   Widget _preVisualizacao() {
     final categoria = _viewModel.categoria;
     final cor = categoria?.cor ?? AppTheme.primaria;
@@ -111,6 +140,7 @@ class _CadastroProdutoViewState extends State<CadastroProdutoView> {
       ),
       body: Form(
         key: _formKey,
+        autovalidateMode: _modoValidacao,
         child: ListenableBuilder(
           listenable: _viewModel,
           builder: (context, _) => ListView(
@@ -118,61 +148,81 @@ class _CadastroProdutoViewState extends State<CadastroProdutoView> {
             children: [
               _preVisualizacao(),
               const SizedBox(height: 24),
-              _rotulo('Nome do produto'),
+
+              // ---------------- NOME ----------------
+              _rotulo('Nome do produto *'),
               TextFormField(
                 controller: _nomeController,
+                maxLength: CadastroProdutoViewModel.nomeMaximo,
+                textCapitalization: TextCapitalization.sentences,
+                textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
                   hintText: 'Ex.: Fone de ouvido',
+                  helperText: 'De 3 a 40 caracteres, sem repetir um produto existente',
                   prefixIcon: Icon(Icons.label_outline),
                 ),
-                textCapitalization: TextCapitalization.sentences,
                 validator: _viewModel.validarNome,
               ),
-              const SizedBox(height: 18),
-              _rotulo('Preço'),
+              const SizedBox(height: 10),
+
+              // ---------------- PREÇO ----------------
+              _rotulo('Preço *'),
               TextFormField(
                 controller: _precoController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                ],
                 decoration: const InputDecoration(
                   hintText: 'Ex.: 49,90',
+                  helperText: 'Maior que zero, até R\$ 100.000,00 e 2 casas decimais',
                   prefixText: 'R\$ ',
                   prefixIcon: Icon(Icons.payments_outlined),
                 ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 validator: _viewModel.validarPreco,
               ),
               const SizedBox(height: 18),
-              _rotulo('Categoria'),
-              InputDecorator(
-                decoration: InputDecoration(
-                  prefixIcon: Icon(
-                    _viewModel.categoria?.icone ?? Icons.category_outlined,
-                    color: _viewModel.categoria?.cor ?? AppTheme.primaria,
+
+              _rotulo('Categoria *'),
+              FormField<Categoria>(
+                initialValue: _viewModel.categoria,
+                validator: _viewModel.validarCategoria,
+                builder: (campo) => InputDecorator(
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(
+                      campo.value?.icone ?? Icons.category_outlined,
+                      color: campo.value?.cor ?? AppTheme.primaria,
+                    ),
+                    helperText: campo.hasError ? null : 'Define o ícone do produto no catálogo',
+                    errorText: campo.errorText,
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   ),
-                  errorText: _viewModel.erroCategoria,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<Categoria>(
-                    value: _viewModel.categoria,
-                    isExpanded: true,
-                    borderRadius: BorderRadius.circular(14),
-                    hint: const Text('Selecione'),
-                    items: _viewModel.categorias
-                        .map(
-                          (c) => DropdownMenuItem<Categoria>(
-                            value: c,
-                            child: Row(
-                              children: [
-                                Icon(c.icone, size: 20, color: c.cor),
-                                const SizedBox(width: 10),
-                                Text(c.rotulo),
-                              ],
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<Categoria>(
+                      value: campo.value,
+                      isExpanded: true,
+                      borderRadius: BorderRadius.circular(14),
+                      hint: const Text('Selecione'),
+                      items: _viewModel.categorias
+                          .map(
+                            (c) => DropdownMenuItem<Categoria>(
+                              value: c,
+                              child: Row(
+                                children: [
+                                  Icon(c.icone, size: 20, color: c.cor),
+                                  const SizedBox(width: 10),
+                                  Text(c.rotulo),
+                                ],
+                              ),
                             ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: _viewModel.selecionarCategoria,
+                          )
+                          .toList(),
+                      onChanged: (valor) {
+                        campo.didChange(valor); // avisa o Form
+                        _viewModel.selecionarCategoria(valor); // avisa o ViewModel
+                      },
+                    ),
                   ),
                 ),
               ),

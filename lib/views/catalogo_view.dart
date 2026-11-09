@@ -6,12 +6,9 @@ import '../viewmodels/catalogo_viewmodel.dart';
 import 'cadastro_produto_view.dart';
 import 'widgets/produto_card.dart';
 
-/// VIEW da tela principal: apenas desenha o estado do CatalogoViewModel
-/// e repassa as ações do usuário para ele.
 class CatalogoView extends StatefulWidget {
   const CatalogoView({super.key, this.viewModel});
 
-  /// Permite injetar o ViewModel (útil em testes).
   final CatalogoViewModel? viewModel;
 
   @override
@@ -30,10 +27,22 @@ class _CatalogoViewState extends State<CatalogoView> {
   Future<void> _abrirCadastro() async {
     final novoProduto = await Navigator.push<Produto>(
       context,
-      MaterialPageRoute(builder: (_) => const CadastroProdutoView()),
+      MaterialPageRoute(
+        builder: (_) => CadastroProdutoView(
+          nomesExistentes: _viewModel.produtos.map((p) => p.nome).toList(),
+        ),
+      ),
     );
-    if (novoProduto != null) {
+    if (novoProduto != null && mounted) {
       _viewModel.adicionarProduto(novoProduto);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            backgroundColor: AppTheme.primaria,
+            content: Text('${novoProduto.nome} foi cadastrado no catálogo!'),
+          ),
+        );
     }
   }
 

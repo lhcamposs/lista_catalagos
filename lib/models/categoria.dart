@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// MODEL: categorias disponíveis, cada uma com rótulo, ícone e cor.
 enum Categoria {
   eletronicos('Eletrônicos', Icons.devices, Color(0xFF1E88E5)),
   roupas('Roupas', Icons.checkroom, Color(0xFFD81B60)),

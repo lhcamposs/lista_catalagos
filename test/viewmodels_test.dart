@@ -31,30 +31,78 @@ void main() {
     });
   });
 
-  group('CadastroProdutoViewModel', () {
-    test('valida nome e preço', () {
-      final vm = CadastroProdutoViewModel();
+  group('CadastroProdutoViewModel - regras do nome', () {
+    final vm = CadastroProdutoViewModel(nomesExistentes: ['Smartphone']);
 
-      expect(vm.validarNome(''), isNotNull);
-      expect(vm.validarNome('Caneca'), isNull);
-      expect(vm.validarPreco('abc'), isNotNull);
-      expect(vm.validarPreco('0'), isNotNull);
+    test('obrigatório', () {
+      expect(vm.validarNome(''), 'Informe o nome do produto');
+      expect(vm.validarNome('   '), 'Informe o nome do produto');
+    });
+    test('mínimo e máximo de caracteres', () {
+      expect(vm.validarNome('TV'), contains('pelo menos 3'));
+      expect(vm.validarNome('A' * 41), contains('no máximo 40'));
+    });
+    test('caracteres permitidos e pelo menos uma letra', () {
+      expect(vm.validarNome('Caneca @#!'), contains('Use apenas'));
+      expect(vm.validarNome('12345'), 'O nome deve conter pelo menos uma letra');
+    });
+    test('não aceita nome duplicado (ignora maiúsculas)', () {
+      expect(vm.validarNome('smartphone'), 'Já existe um produto com esse nome');
+    });
+    test('nome válido', () {
+      expect(vm.validarNome('Fone de Ouvido (Bluetooth)'), isNull);
+      expect(vm.validarNome('Café 500g'), isNull);
+    });
+  });
+
+  group('CadastroProdutoViewModel - regras do preço', () {
+    final vm = CadastroProdutoViewModel();
+
+    test('obrigatório', () {
+      expect(vm.validarPreco(''), 'Informe o preço');
+    });
+    test('formato inválido', () {
+      expect(vm.validarPreco('abc'), contains('Preço inválido'));
+      expect(vm.validarPreco('1,2,3'), contains('Preço inválido'));
+      expect(vm.validarPreco('12.34.5'), contains('Preço inválido'));
+    });
+    test('no máximo 2 casas decimais', () {
+      expect(vm.validarPreco('10,999'), 'Use no máximo 2 casas decimais');
+    });
+    test('maior que zero e até 100 mil', () {
+      expect(vm.validarPreco('0'), 'O preço deve ser maior que zero');
+      expect(vm.validarPreco('0,00'), 'O preço deve ser maior que zero');
+      expect(vm.validarPreco('100.000,01'), contains('no máximo'));
+    });
+    test('formatos aceitos', () {
+      expect(vm.validarPreco('49,90'), isNull);
+      expect(vm.validarPreco('49.90'), isNull);
       expect(vm.validarPreco('1.299,90'), isNull);
       expect(vm.converterPreco('1.299,90'), 1299.90);
+      expect(vm.converterPreco('1.299'), 1299);
       expect(vm.converterPreco('10.5'), 10.5);
     });
+  });
 
-    test('exige categoria antes de criar o produto', () {
+  group('CadastroProdutoViewModel - categoria e criação', () {
+    test('categoria obrigatória', () {
+      final vm = CadastroProdutoViewModel();
+      expect(vm.validarCategoria(null), 'Selecione uma categoria');
+      expect(vm.validarCategoria(Categoria.livros), isNull);
+    });
+
+    test('só cria o produto quando todas as regras são satisfeitas', () {
       final vm = CadastroProdutoViewModel();
 
-      expect(vm.criarProduto(nome: 'Caneca', preco: '25', camposValidos: true), isNull);
-      expect(vm.erroCategoria, isNotNull);
+      expect(vm.criarProduto(nome: 'Caneca', preco: '25'), isNull); // sem categoria
 
       vm.selecionarCategoria(Categoria.casa);
-      final produto = vm.criarProduto(nome: 'Caneca', preco: '25', camposValidos: true);
+      expect(vm.criarProduto(nome: 'Ca', preco: '25'), isNull); // nome curto
+      expect(vm.criarProduto(nome: 'Caneca', preco: '-1'), isNull); // preço inválido
 
-      expect(vm.erroCategoria, isNull);
-      expect(produto!.categoria, Categoria.casa);
+      final produto = vm.criarProduto(nome: '  Caneca  ', preco: '25,50');
+      expect(produto!.nome, 'Caneca');
+      expect(produto.preco, 25.5);
       expect(produto.icone, Categoria.casa.icone);
     });
   });
